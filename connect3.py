@@ -1,3 +1,59 @@
+import time
+
+
+# ocupo dos funciones, 'move' simula como si fuera a hacer el movimiento. 'actions' genera las posibles acciones conforme al state
+
+class MiniMaxAgent:
+    def __init__(self, player):
+        self.player = player # 0/white or 1/black
+
+    def heuristic(self, state):
+        """
+        calculates (naive )heuristic
+        """
+        pass
+
+    def actions(self, state):
+        """
+        generates all possible actions given a state
+        """
+
+        pass
+
+    def move(self, state, actions):
+        """
+        simulates new board given a state and action
+        """
+    
+        pass
+
+    def is_terminal(self, state):
+        pass
+    
+
+
+    def minimax(self, state, depth, max_player):
+        #terminal state or depth cutoff
+        if self.is_terminal or depth == 0: 
+            return self.heuristic(state)
+
+        if max_player:
+            max_eval = float('-inf')
+            for action in self.actions(state):
+                eval = self.minimax(self.move(state, action), depth-1, False)
+                max_eval = max(max_eval, eval)
+            return max_eval
+        else:
+            min_eval = float('inf')
+            for action in self.actions(state):
+                eval = self.minimax(self.move(state, action), depth-1, True)
+                min_eval= min(min_eval, eval)
+            return min_eval
+
+    def find_best_move(self, state, depth):
+        pass
+
+
 class DynamicConnect3:
     """
     A class to represent and play the Dynamic Connect-3 game.
@@ -196,19 +252,6 @@ class DynamicConnect3:
 
         print("\nThanks for playing!")
 
-
-class MiniMaxAgent:
-    def __init__(self, player):
-        pass
-
-    def heuristic(self, state):
-        pass
-
-    def minimax(self, state, depth, max_player):
-        pass
-
-    def find_best_move((self, state, depth)):
-        pass
 
 
 
