@@ -6,6 +6,14 @@ import time
 class MiniMaxAgent:
     def __init__(self, player):
         self.player = player # 0/white or 1/black
+        # list/dict tracking pieces?
+        if player == 0:
+            self.my_pieces = [(1,1),(1,3),(5,2),(5,4)] # X Y
+            self.op_pieces =  [(1,2),(1,4),(5,1),(5,3)] # X Y
+        else:
+            self.op_pieces = [(1,1),(1,3),(5,2),(5,4)] # X Y
+            self.my_pieces =  [(1,2),(1,4),(5,1),(5,3)] # X Y
+        self.dirs = ['N','S','E','W']
 
     def heuristic(self, state):
         """
@@ -13,19 +21,68 @@ class MiniMaxAgent:
         """
         pass
 
-    def actions(self, state):
+    # will it be faster if i combine gen and val in single func
+    def val_actions(self, state, action):
+        """
+        Validates that action is legal
+        
+        """
+
+
+
+        # Validate new position
+        if not self._is_valid_coordinate(new_y, new_x):
+            return False, "Move is off the board."
+
+        if self.board[new_y][new_x] is not None:
+            return False, "The destination square is not empty."
+
+
+        pass
+
+    def in_board(self, x, y):
+        return 0 <= y < 4 and 0 <= x < 5
+
+
+
+    def gen_actions(self, state, coords):
         """
         generates all possible actions given a state
         """
 
-        pass
+        actions = []
 
-    def move(self, state, actions):
+        # find/fromlist of pieces gen possible actions
+        for x,y in coords:
+            for dir in self.dirs:
+
+                new_x, new_y = x, y
+                if dir == 'N':
+                    new_y -= 1
+                elif dir == 'S':
+                    new_y += 1
+                elif dir == 'E':
+                    new_x += 1
+                elif dir == 'W':
+                    new_x -= 1
+                
+                if self.in_board(new_x, new_y) and state[new_y][new_x] is not None:
+                    actions.append((new_x,new_y))
+        
+        return actions
+
+    def make_move(self, state, action):
         """
         simulates new board given a state and action
         """
-    
-        pass
+
+        x, y = action
+        state[y][x] = self.current_player
+        state[y][x] = None
+        
+        return True, f"Move {move_str} successful."
+
+
 
     def is_terminal(self, state):
         pass
@@ -33,25 +90,41 @@ class MiniMaxAgent:
 
 
     def minimax(self, state, depth, max_player):
+        #TODO: double ckeck min max logic
         #terminal state or depth cutoff
-        if self.is_terminal or depth == 0: 
+        if self.is_terminal(state) or depth == 0: 
             return self.heuristic(state)
+        
+        # we gen actions?
 
         if max_player:
             max_eval = float('-inf')
             for action in self.actions(state):
-                eval = self.minimax(self.move(state, action), depth-1, False)
+                eval = self.minimax(self.make_move(state, action), depth-1, False)
                 max_eval = max(max_eval, eval)
             return max_eval
         else:
             min_eval = float('inf')
             for action in self.actions(state):
-                eval = self.minimax(self.move(state, action), depth-1, True)
+                eval = self.minimax(self.make_move(state, action), depth-1, True)
                 min_eval= min(min_eval, eval)
             return min_eval
 
     def find_best_move(self, state, depth):
+        """
+        logic to find best action
+        """
+
+
+
+        # gen moves
+        # minimax
+        # update my self.pieces only here wiht the best action
+        # return best action
+
         pass
+
+    #TODO: func update board that updates self.board and op_pieces when oponent moves
 
 
 class DynamicConnect3:
@@ -197,6 +270,8 @@ class DynamicConnect3:
         """
         Checks for a draw by threefold repetition.
         """
+
+        # TODO: REPLACE FOR ZOBRIST HASHING
         board_state = self._get_board_state_tuple()
         count = self.board_history.get(board_state, 0)
         self.board_history[board_state] = count + 1
