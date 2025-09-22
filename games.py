@@ -1,7 +1,7 @@
 import time
 import utils
 import random
-from agents import MiniMaxAgent, MiniMaxAgentD
+from agents import MiniMaxAgent, MiniMaxAgentD, AlphaBeta, AlphaBetaD
 
 
 
@@ -24,6 +24,11 @@ class Connect3M:
             self.agent = MiniMaxAgent(player=self.ai_player)
         elif model == 'mmD':
             self.agent = MiniMaxAgentD(player=self.ai_player)
+        elif model == 'abp':
+            self.agent = AlphaBeta(player=self.ai_player)
+        elif model == 'abpD':
+            self.agent = AlphaBetaD(player=self.ai_player)
+        
         self.current_player = 0
         self.game_over = False
 
