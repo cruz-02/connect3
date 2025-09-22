@@ -1,130 +1,221 @@
 import time
+import utils
+import random
 
-
-# ocupo dos funciones, 'move' simula como si fuera a hacer el movimiento. 'actions' genera las posibles acciones conforme al state
-
+#  TODO: IMPLEMENT THREE FOLD REPETITION TO AGENT SO IT CAN DRAW Zobrist hashing
 class MiniMaxAgent:
     def __init__(self, player):
-        self.player = player # 0/white or 1/black
-        # list/dict tracking pieces?
-        if player == 0:
-            self.my_pieces = [(1,1),(1,3),(5,2),(5,4)] # X Y
-            self.op_pieces =  [(1,2),(1,4),(5,1),(5,3)] # X Y
-        else:
-            self.op_pieces = [(1,1),(1,3),(5,2),(5,4)] # X Y
-            self.my_pieces =  [(1,2),(1,4),(5,1),(5,3)] # X Y
+        self.player = player # 0/white/max or 1/black/min
+        self.board = [
+            [0, None, None, None, 1],
+            [1, None, None, None, 0],
+            [0, None, None, None, 1],
+            [1, None, None, None, 0],
+        ]
+        self.board_history = {}
+        self.zobrist_table = [[[random.getrandbits(64) for _ in range(5)] for _ in range(4)] for _ in range(2)]
+
+        # TODO: may change it so that it tracks a list of pieces... these are wrong tho (should do -1)
+        # if player == 0:
+        #     self.my_pieces = [(1,1),(1,3),(5,2),(5,4)] # X Y
+        #     self.op_pieces =  [(1,2),(1,4),(5,1),(5,3)] # X Y
+        # else:
+        #     self.op_pieces = [(1,1),(1,3),(5,2),(5,4)] # X Y
+        #     self.my_pieces =  [(1,2),(1,4),(5,1),(5,3)] # X Y
         self.dirs = ['N','S','E','W']
 
-    def heuristic(self, state):
+    def heuristic(self, state, status):
         """
-        calculates (naive )heuristic
+        calculates naive heuristic (runs of two) 
         """
-        pass
 
-    # will it be faster if i combine gen and val in single func
-    def val_actions(self, state, action):
-        """
-        Validates that action is legal
+        if status == self.player:
+            return float('inf')
+        elif status == (1 - self.player):
+            return float('-inf')
+        elif status == "DRAW":
+            return 0
+
+
+        curr_player = self.player
+        opp_player = 1 - self.player
+
+        my_score = 0
+        opp_score = 0
+
+
+        # Check horizontal
+        for y in range(4):
+            for x in range(4):
+                if state[y][x] == curr_player and state[y][x+1] == curr_player:
+                    my_score += 1
+                elif state[y][x] == opp_player and state[y][x+1] == opp_player:
+                    opp_score += 1 
+
+        # Check vertical
+        for y in range(3):
+            for x in range(5):
+                if state[y][x] == curr_player and state[y+1][x] == curr_player:
+                    my_score += 1
+                elif state[y][x] == opp_player and state[y+1][x] == opp_player:
+                    opp_score += 1
+
+        # Check diagonal (down-right)
+        for y in range(3):
+            for x in range(4):
+                if state[y][x] == curr_player and state[y+1][x+1] == curr_player:
+                    my_score += 1
+                elif state[y][x] == opp_player and state[y+1][x+1] == opp_player:
+                    opp_score += 1
+
+        # Check diagonal (down-left)
+        for y in range(3):
+            for x in range(1, 5):
+                if state[y][x] == curr_player and state[y+1][x-1] == curr_player:
+                    my_score += 1
+                elif state[y][x] == opp_player and state[y+1][x-1] == opp_player:
+                    opp_score += 1
         
-        """
+        return my_score - opp_score
 
 
 
-        # Validate new position
-        if not self._is_valid_coordinate(new_y, new_x):
-            return False, "Move is off the board."
-
-        if self.board[new_y][new_x] is not None:
-            return False, "The destination square is not empty."
-
-
-        pass
-
-    def in_board(self, x, y):
-        return 0 <= y < 4 and 0 <= x < 5
-
-
-
-    def gen_actions(self, state, coords):
+    def gen_actions(self, state, is_max):
         """
         generates all possible actions given a state
-        """
 
-        actions = []
-
-        # find/fromlist of pieces gen possible actions
-        for x,y in coords:
-            for dir in self.dirs:
-
-                new_x, new_y = x, y
-                if dir == 'N':
-                    new_y -= 1
-                elif dir == 'S':
-                    new_y += 1
-                elif dir == 'E':
-                    new_x += 1
-                elif dir == 'W':
-                    new_x -= 1
-                
-                if self.in_board(new_x, new_y) and state[new_y][new_x] is not None:
-                    actions.append((new_x,new_y))
+        input
+        state: board matrix
+        coords: (x,y) tuple
         
-        return actions
-
-    def make_move(self, state, action):
-        """
-        simulates new board given a state and action
+        output:
+        tuple: curr coord
         """
 
-        x, y = action
-        state[y][x] = self.current_player
-        state[y][x] = None
+        moves = []
+        player = 0 if is_max else 1
         
-        return True, f"Move {move_str} successful."
+        # Scans whole board
+        # May change it to receive a list that tracks both my and opp pieces coordinates
+        for y in range(4):
+            for x in range(5):
+                if state[y][x] == player:
+                    for dir in self.dirs:
+
+                        new_x, new_y = x, y
+                        if dir == 'N':
+                            new_y -= 1
+                        elif dir == 'S':
+                            new_y += 1
+                        elif dir == 'E':
+                            new_x += 1
+                        elif dir == 'W':
+                            new_x -= 1
+                        
+                        if utils.in_board(new_x, new_y) and state[new_y][new_x] is None:
+                            moves.append(((x,y), (new_x, new_y)))
+        
+        return moves
 
 
+    def minimax(self, state, depth, is_max, curr_hash, history):
 
-    def is_terminal(self, state):
-        pass
-    
-
-
-    def minimax(self, state, depth, max_player):
-        #TODO: double ckeck min max logic
+        status = utils.game_status(state)
         #terminal state or depth cutoff
-        if self.is_terminal(state) or depth == 0: 
-            return self.heuristic(state)
+        if status is not None or depth == 0:
+            return self.heuristic(state, status), None
         
-        # we gen actions?
+        moves = self.gen_actions(state, is_max)
 
-        if max_player:
+        if is_max:
             max_eval = float('-inf')
-            for action in self.actions(state):
-                eval = self.minimax(self.make_move(state, action), depth-1, False)
-                max_eval = max(max_eval, eval)
-            return max_eval
+            best_move = None
+            for move in moves:
+                new_hash = utils.calculate_new_hash(state, move, curr_hash, self.zobrist_table)
+                new_history = history.copy()
+                new_history[new_hash] = new_history.get(new_hash, 0) + 1
+
+                if new_history[new_hash] >= 3:
+                    eval = 0
+                else:
+                    eval, _ = self.minimax(utils.make_move(state, move, True), depth-1, False, new_hash, new_history)
+                
+                if eval > max_eval:
+                    max_eval = eval
+                    best_move = move
+            return max_eval, best_move
         else:
             min_eval = float('inf')
-            for action in self.actions(state):
-                eval = self.minimax(self.make_move(state, action), depth-1, True)
-                min_eval= min(min_eval, eval)
-            return min_eval
+            best_move = None
+            for move in moves:
 
-    def find_best_move(self, state, depth):
+                new_hash = utils.calculate_new_hash(state, move, curr_hash, self.zobrist_table)
+                new_history = history.copy()
+                new_history[new_hash] = new_history.get(new_hash, 0) + 1
+
+                if new_history[new_hash] >= 3:
+                    eval = 0
+                else:
+                    eval, _= self.minimax(utils.make_move(state, move, False), depth-1, True, new_hash, new_history)
+                
+                min_eval= min(min_eval, eval)
+                if eval < min_eval:
+                    min_eval = eval
+                    best_move = move
+            return min_eval, best_move
+
+    def find_best_move(self, depth):
         """
         logic to find best action
         """
+        is_max = True if self.player == 0 else False
+
+        init_history = self.board_history.copy()
+        init_hash = utils.calculate_initial_hash(self.board, self.zobrist_table)
+        init_history[init_hash] = init_history.get(init_hash, 0) + 1
 
 
+        score, best_move = self.minimax(self.board, depth, is_max, init_hash, init_history)
 
-        # gen moves
-        # minimax
-        # update my self.pieces only here wiht the best action
-        # return best action
+        print(f"Agent {self.player} found best move: {best_move} with score: {score}")
 
-        pass
+        # Update Board
+        self.board = utils.make_move(self.board, best_move, is_max)
+        # update game history with new board
+        update_hash = utils.calculate_initial_hash(self.board, self.zobrist_table)
+        self.board_history[update_hash] = self.board_history.get(update_hash, 0) + 1
 
-    #TODO: func update board that updates self.board and op_pieces when oponent moves
+        return best_move
+    
+    def update_board_opp(self, input):
+        """
+        update board with received values
+        input shaped as 14E
+        """
+        is_max = True if self.player == 0 else False
+        opponent_is = not is_max
+
+        x = int(input[0])-1
+        y = int(input[1])-1
+        dir = input[2].upper()
+
+        new_x, new_y = x, y
+        if dir == 'N':
+            new_y -= 1
+        elif dir == 'S':
+            new_y += 1
+        elif dir == 'E':
+            new_x += 1
+        elif dir == 'W':
+            new_x -= 1
+
+        move = ((x, y), (new_x, new_y))
+
+
+        self.board = utils.make_move(self.board, move, opponent_is)
+        print(f"opponent moved: {input}")
+
+    
 
 
 class DynamicConnect3:
@@ -152,10 +243,6 @@ class DynamicConnect3:
         self.board_history = {} # For checking threefold repetition draw
         self.game_over = False
         self.winner = None
-
-    def _get_board_state_tuple(self):
-        """Converts the current board state to a hashable tuple."""
-        return tuple(tuple(row) for row in self.board)
 
     def display_board(self):
         """
@@ -272,7 +359,7 @@ class DynamicConnect3:
         """
 
         # TODO: REPLACE FOR ZOBRIST HASHING
-        board_state = self._get_board_state_tuple()
+        board_state = utils.get_board_state_tuple(self.board)
         count = self.board_history.get(board_state, 0)
         self.board_history[board_state] = count + 1
         
