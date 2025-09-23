@@ -382,3 +382,54 @@ class AlphaBetaD(MiniMaxAgentD):
         self.board_history[update_hash] = self.board_history.get(update_hash, 0) + 1
 
         return utils.format_move_to_string(best_move)
+
+class MiniMaxAgentV2(MiniMaxAgent):
+    """
+    Changed Heuristic, so that it is not naive.
+    Inspired from Victor Aliss Connect 4 work. (winning / threat pattern recognition, positional value, Zugzwang )
+    And some of my own intuition.
+    """
+    def __init__(self, player):
+        super().__init__(player)
+
+    def heuristic(self, state, status):
+        """
+        calculates heuristic v2
+        winning setups = 9999
+        forcing setups * 10
+        winning patterns * 4
+        runs of two * 1
+        pos/grouping score * 1
+        """
+        if status == self.player:
+            return float('inf')
+        elif status == (1 - self.player):
+            return float('-inf')
+        curr_player = self.player
+        opp_player = 1 - self.player
+
+        # TODO: may do it may not
+
+        # if utils.count_double_threats(state, curr_player) > 0:
+        #     return 9999
+        # if utils.count_double_threats(state, opp_player) > 0:
+        #     return -9999
+        
+        my_patterns, my_threats = utils.count_forcing_threats(state, curr_player)
+        opp_patterns, opp_threats = utils.count_forcing_threats(state, opp_player)
+
+        threat_score = 10 * (my_threats - opp_threats)
+        pattern_score = 4 * (my_patterns - opp_patterns)
+
+        my_runsoftwo = utils.count_runsoftwo(state, curr_player)
+        opp_runsoftwo = utils.count_runsoftwo(state, opp_player)
+
+        runsoftwo_score = my_runsoftwo - opp_runsoftwo
+
+        my_pos = utils.pos_score(state, curr_player)
+        opp_pos = utils.pos_score(state, opp_player)
+
+        pos_score = my_pos - opp_pos
+
+        
+        return threat_score + pattern_score + runsoftwo_score + pos_score
