@@ -340,10 +340,10 @@ def pos_score(state, player):
     Positional value, if on center, higher prob of creating patterns, thus higher prob of controlling flow of game.
     """
     value_map = [
-        [0, 1, 2, 1, 0],
-        [1, 2, 3, 2, 1],
-        [1, 2, 3, 2, 1],
-        [0, 1, 2, 1, 0],
+        [1, 3, 7, 3, 1],
+        [3, 5, 9, 5, 3], 
+        [3, 5, 9, 5, 3],
+        [1, 3, 7, 3, 1],
     ]
     
     score = 0
@@ -364,6 +364,67 @@ def order_moves(state, moves, is_max, player):
     # Gemini helped me with this one: "How to order a tople based one of its elements. my tuple looks like this (score, (move))" 
     sorted_moves = [move for _, move in sorted(zip(move_scores, moves), key=lambda pair: pair[0], reverse=is_max)]
     return sorted_moves
+
+
+
+
+def find_winning_square(state, player):
+
+    # Horizontal
+    for y in range(4):
+        for x in range(3):
+            line = [state[y][x], state[y][x+1], state[y][x+2]]
+            if line.count(player) == 2 and line.count(None) == 1:
+                empty_index = line.index(None)
+                return (y, x + empty_index)
+    # Vertical
+    for y in range(2):
+        for x in range(5):
+            line = [state[y][x], state[y+1][x], state[y+2][x]]
+            if line.count(player) == 2 and line.count(None) == 1:
+                empty_index = line.index(None)
+                return (y + empty_index, x)
+    # Diagonal (down-right)
+    for y in range(2):
+        for x in range(3):
+            line = [state[y][x], state[y+1][x+1], state[y+2][x+2]]
+            if line.count(player) == 2 and line.count(None) == 1:
+                empty_index = line.index(None)
+                return (y + empty_index, x + empty_index)
+    # Diagonal (down-left)
+    for y in range(2):
+        for x in range(2, 5):
+            line = [state[y][x], state[y+1][x-1], state[y+2][x-2]]
+            if line.count(player) == 2 and line.count(None) == 1:
+                empty_index = line.index(None)
+                return (y + empty_index, x - empty_index)
+                
+    return None 
+
+
+def find_move_to_square(board, player, target_square):
+    """
+    Searches for a piece belonging to the player that can legally move
+    to the target_square.
+    Returns a move tuple ((start_x, start_y), (end_x, end_y)) or None.
+    """
+    if target_square is None:
+        return None
+        
+    ty, tx = target_square
+    # Directions dict needs to be available to this function
+    dirs = {'N': (0, -1), 'S': (0, 1), 'E': (1, 0), 'W': (-1, 0)}
+    
+    # Check all 4 adjacent squares to the target
+    for dx, dy in dirs.values():
+        start_y, start_x = ty - dy, tx - dx
+        
+        # Check if this adjacent square is on the board and contains the player's piece
+        if in_board(start_x, start_y) and board[start_y][start_x] == player:
+            # Found a valid blocking move
+            return ((start_x, start_y), (tx, ty))
+            
+    return None # No piece found that can block the threat
 
 
 

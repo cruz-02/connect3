@@ -11,7 +11,7 @@ def play_local_game(args):
             if args.grid == 'large':
                 model = str(input("Choose your model ('mmv2', 'abpv2'): "))
             else:
-                model = str(input("Choose your model ('mm', 'mmv2', 'abp', 'abpv2'): "))
+                model = str(input("Choose your model ('mm', 'mmD', 'mm2', 'mm2D', 'ab', 'abD', 'ab2' , 'ab2D'): "))
             
             choice = int(input("Choose your player: 0 (White, moves first) or 1 (Black, moves second): "))
             if choice in [0, 1]:
@@ -45,7 +45,7 @@ def play_server_game(args):
     print(f"Attempting to connect to server at {host}:{port}...")
 
     # Get game details from the user
-    model = str(input("Choose AI model for this client ('mmv2', 'abpv2'): "))
+    model = str(input("Choose AI model for this client ('mm', 'mmD', 'mm2', 'mm2D', 'ab', 'abD', 'ab2' , 'ab2D'): "))
     color = str(input("Choose color for this client ('white' or 'black'): ")).lower()
     
     if color not in ['white', 'black']:

@@ -1,7 +1,7 @@
 import time
 import utils
 import random
-from agents import MiniMaxAgent, MiniMaxAgentD, AlphaBeta, AlphaBetaD, MiniMaxAgentV2, AlphaBetaV2, MiniMaxAgentV2L, AlphaBetaV2L
+from agents import MiniMaxAgent, MiniMaxAgentD, AlphaBeta, AlphaBetaD, MiniMaxAgentV2, AlphaBetaV2, MiniMaxv2D, AlphaBetav2D
 
 
 
@@ -24,14 +24,18 @@ class Connect3M:
             self.agent = MiniMaxAgent(player=self.ai_player)
         elif model == 'mmD':
             self.agent = MiniMaxAgentD(player=self.ai_player)
-        elif model == 'mmv2':
+        elif model == 'mm2':
             self.agent = MiniMaxAgentV2(player=self.ai_player)
-        elif model == 'abp':
+        elif model == 'mm2D':
+            self.agent = MiniMaxv2D(player=self.ai_player)
+        elif model == 'ab':
             self.agent = AlphaBeta(player=self.ai_player)
-        elif model == 'abpD':
+        elif model == 'abD':
             self.agent = AlphaBetaD(player=self.ai_player)
-        elif model == 'abpv2':
+        elif model == 'ab2':
             self.agent = AlphaBetaV2(player=self.ai_player)
+        elif model == 'ab2D':
+            self.agent = AlphaBetav2D(player=self.ai_player)
         
         self.current_player = 0
         self.game_over = False
@@ -54,7 +58,7 @@ class Connect3M:
             
             if self.current_player == self.ai_player:
                 print(f"\nPlayer {player_name} (AI) is thinking...")
-                move_str = self.agent.find_best_move(depth=4)
+                move_str = self.agent.find_best_move(depth=15)
                 print(f"AI chose move: {move_str}")
             else:
                 move_str = input(f"Player {player_name} (You), enter your move (e.g., '14E'): ")
@@ -155,7 +159,7 @@ class Connect3MServer(Connect3M):
         # If we are Player 0, we make the first move.
         if self.agent.player == 0:
             print("We are Player 0. Calculating the first move.")
-            move_to_send = self.agent.find_best_move(depth=4)
+            move_to_send = self.agent.find_best_move(depth=5)
             self._apply_local_move(move_to_send, self.agent.player)
             self.last_move_sent = move_to_send
             utils.send_move(self.sock, move_to_send)
@@ -193,7 +197,7 @@ class Connect3MServer(Connect3M):
 
             # 2. Now it's our turn. Calculate and send our move.
             print("Opponent has moved. Calculating our response...")
-            move_to_send = self.agent.find_best_move(depth=4)
+            move_to_send = self.agent.find_best_move(depth=5)
             if not move_to_send:
                 print("Agent has no moves. Game might be over.")
                 self.game_over = True
