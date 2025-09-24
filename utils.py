@@ -1,5 +1,37 @@
 import copy
+import socket
 
+
+
+# Add these functions to your utils.py file GEMINI GENERATED
+
+def send_move(sock, move_str):
+    """Encodes and sends a move string to the server with a newline."""
+    if not move_str:
+        print("No move to send.")
+        return
+    try:
+        # Append newline as a message delimiter and encode to bytes
+        message_bytes = (move_str + '\n').encode('utf-8')
+        sock.sendall(message_bytes)
+        print(f"Sent: {move_str}")
+    except Exception as e:
+        print(f"Error sending move: {e}")
+
+def receive_move(sock, buffer_size=1024):
+    """Receives data from the server, decodes it, and removes the newline."""
+    try:
+        data_bytes = sock.recv(buffer_size)
+        if not data_bytes:
+            return None # Connection closed by server
+        
+        # Decode from bytes and strip leading/trailing whitespace (like the newline)
+        message = data_bytes.decode('utf-8').strip()
+        print(f"Received: {message}")
+        return message
+    except Exception as e:
+        print(f"Error receiving move: {e}")
+        return None
 
 
 def in_board(x, y):
@@ -111,3 +143,430 @@ def calculate_new_hash(state, move, curr_hash, zobrist_table):
     new_hash ^= zobrist_table[player_token][new_y][new_x]
 
     return new_hash
+
+
+#---------------------------------------------------------------------------------------------------------------------------------------------------------
+# Heuristic V2 utils
+
+
+def count_double_threats(state, player):
+    """
+    Counts unstoppable threats
+    """
+
+    #  TODO: more than 2 force threats in a square?
+    pass
+
+
+
+def count_forcing_threats(state, player, debug = False):
+    """
+    modified it so that it uses the same for loop to make the heuristic more efficient. (used to be winning_patterns and forcing_threats different)
+    Counts winning patterns and forcing threats. Winning pattern example [1,None,1] [1,1,None]
+    """
+
+    if debug:
+        print("Board State:")
+        for row in state:
+            print([c if c is not None else '_' for c in row])
+
+    winning_patterns = 0
+    forcing_threats = 0
+    
+    dirs = [(0, 1), (0, -1), (1, 0), (-1, 0)] # S, N, E, W
+
+    # Actual forcing threat
+    def forcing_threat(winning_coords, piece1_coords, piece2_coords, debug = False):
+        """
+        Inspired on the concept of Zwugzwang
+        """
+        wy, wx = winning_coords
+        for dx, dy in dirs:
+            ny, nx = wy + dy, wx + dx
+            if debug:
+                print(f"wx:  {wx}, wy: {wy}")
+                print(f"dx:  {dx}, dy: {dy}")
+                print(f"nx:  {nx}, ny: {ny}")
+                breakpoint()
+            if (0 <= ny < 4 and 0 <= nx < 5) and state[ny][nx] == player:
+                if (ny, nx) != piece1_coords and (ny, nx) != piece2_coords:
+                    return True
+        return False
+
+    # Horizontal lines
+    if debug:
+        print("horizontal")
+    for y in range(4):
+        for x in range(3):
+            line = [state[y][x], state[y][x+1], state[y][x+2]]
+
+            # if debug:
+            #     print(f"y: {y}  x: {x}")
+            #     print(f"winning_patterns {winning_patterns}, forcing threats {forcing_threats} ")
+            #     print(line)
+            #     breakpoint()
+
+            # if player two times in line and empty square
+            if line.count(player) == 2 and line.count(None) == 1:
+                empty_idx = line.index(None)
+                p1_idx = line.index(player)
+                p2_idx = line.index(player, p1_idx + 1) 
+                
+                winning_square = (y, x + empty_idx)
+                piece1_coords = (y, x + p1_idx)
+                piece2_coords = (y, x + p2_idx)
+                
+                #  if is not a forcing threat it is a winning pattern
+                if forcing_threat(winning_square, piece1_coords, piece2_coords):
+                    forcing_threats += 1
+                else:
+                    winning_patterns += 1
+
+    # Vertical lines
+    if debug:
+        print("vertical")
+    for y in range(2):
+        for x in range(5):
+            line = [state[y][x], state[y+1][x], state[y+2][x]]
+            if debug:
+                print(f"y: {y}  x: {x}")
+                print(f"winning_patterns {winning_patterns}, forcing threats {forcing_threats} ")
+                print(line)
+                breakpoint()
+
+            if line.count(player) == 2 and line.count(None) == 1:
+                empty_idx = line.index(None)
+                p1_idx = line.index(player)
+                p2_idx = line.index(player, p1_idx + 1)
+                
+                winning_square = (y + empty_idx, x)
+                piece1_coords = (y + p1_idx, x)
+                piece2_coords = (y + p2_idx, x)
+
+                if forcing_threat(winning_square, piece1_coords, piece2_coords, debug):
+                    forcing_threats += 1
+                else:
+                    winning_patterns += 1
+
+    # Diagonal (down-right)
+    if debug:
+        print("down-right")
+    for y in range(2):
+        for x in range(3):
+            line = [state[y][x], state[y+1][x+1], state[y+2][x+2]]
+            # if debug:
+            #     print(f"y: {y}  x: {x}")
+            #     print(f"winning_patterns {winning_patterns}, forcing threats {forcing_threats} ")
+            #     print(line)
+            #     breakpoint()
+
+            if line.count(player) == 2 and line.count(None) == 1:
+                empty_idx = line.index(None)
+                p1_idx = line.index(player)
+                p2_idx = line.index(player, p1_idx + 1)
+
+                winning_square = (y + empty_idx, x + empty_idx)
+                piece1_coords = (y + p1_idx, x + p1_idx)
+                piece2_coords = (y + p2_idx, x + p2_idx)
+
+                if forcing_threat(winning_square, piece1_coords, piece2_coords):
+                    forcing_threats += 1
+                else:
+                    winning_patterns += 1
+
+    # Diagonal (down-left)
+    if debug:
+        print("down-left")
+    for y in range(2):
+        for x in range(2, 5):
+            line = [state[y][x], state[y+1][x-1], state[y+2][x-2]]
+            # if debug:
+            #     print(f"y: {y}  x: {x}")
+            #     print(f"winning_patterns {winning_patterns}, forcing threats {forcing_threats} ")
+            #     print(line)
+            #     breakpoint()
+            if line.count(player) == 2 and line.count(None) == 1:
+                empty_idx = line.index(None)
+                p1_idx = line.index(player)
+                p2_idx = line.index(player, p1_idx + 1)
+                
+                winning_square = (y + empty_idx, x - empty_idx)
+                piece1_coords = (y + p1_idx, x - p1_idx)
+                piece2_coords = (y + p2_idx, x - p2_idx)
+
+                if forcing_threat(winning_square, piece1_coords, piece2_coords):
+                    forcing_threats += 1
+                else:
+                    winning_patterns += 1
+
+    return winning_patterns, forcing_threats
+    
+
+def count_runsoftwo(state, player):
+    """
+    Naively counts runs of two (which are good not the best) example: [1,1,0] is a run of two even though it is blocked
+    """
+
+    score = 0
+    # Check horizontal
+    for y in range(4):
+        for x in range(4):
+            if state[y][x] == player and state[y][x+1] == player:
+                score += 1
+
+    # Check vertical
+    for y in range(3):
+        for x in range(5):
+            if state[y][x] == player and state[y+1][x] == player:
+                score += 1
+
+    # Check diagonal (down-right)
+    for y in range(3):
+        for x in range(4):
+            if state[y][x] == player and state[y+1][x+1] == player:
+                score += 1
+
+    # Check diagonal (down-left)
+    for y in range(3):
+        for x in range(1, 5):
+            if state[y][x] == player and state[y+1][x-1] == player:
+                score += 1
+
+    return score
+
+
+def pos_score(state, player):
+    """
+    Positional value, if on center, higher prob of creating patterns, thus higher prob of controlling flow of game.
+    """
+    value_map = [
+        [0, 1, 2, 1, 0],
+        [1, 2, 3, 2, 1],
+        [1, 2, 3, 2, 1],
+        [0, 1, 2, 1, 0],
+    ]
+    
+    score = 0
+    for y in range(4):
+        for x in range(5):
+            if state[y][x] == player:
+                score += value_map[y][x]
+    return score
+
+
+def order_moves(state, moves, is_max, player):
+    move_scores = []
+    for move in moves:
+        temp_state = make_move(state, move, is_max)
+        score = count_runsoftwo(temp_state, player) - count_runsoftwo(temp_state, 1 - player)
+        move_scores.append(score)
+    
+    # Gemini helped me with this one: "How to order a tople based one of its elements. my tuple looks like this (score, (move))" 
+    sorted_moves = [move for _, move in sorted(zip(move_scores, moves), key=lambda pair: pair[0], reverse=is_max)]
+    return sorted_moves
+
+
+
+# ----------------------------------------------------------------------
+# --- NEW: Large 7x6 Grid Functions --- GEMINI GENERATED
+# ----------------------------------------------------------------------
+
+def in_boardL(x, y):
+    """Checks if coordinates are within the 7x6 board bounds."""
+    return 0 <= y < 7 and 0 <= x < 6
+
+def make_moveL(state, move, is_max):
+    """Simulates a new 7x6 board given a state and action."""
+    start_pos, end_pos = move
+    start_x, start_y = start_pos
+    end_x, end_y = end_pos
+    
+    new_state = copy.deepcopy(state)
+    player_token = 0 if is_max else 1
+    new_state[end_y][end_x] = player_token
+    new_state[start_y][start_x] = None
+    
+    return new_state
+
+def format_move_to_stringL(move_tuple):
+    """Formats a move tuple to a string (logic is board-size independent)."""
+    dirs = {'N': (0, -1), 'S': (0, 1), 'E': (1, 0), 'W': (-1, 0)}
+    if not move_tuple: 
+        return None
+    start_pos, end_pos = move_tuple
+    start_x, start_y = start_pos
+    end_x, end_y = end_pos
+    dx, dy = end_x - start_x, end_y - start_y
+    direction = [k for k, v in dirs.items() if v == (dx, dy)][0]
+    return f"{start_x + 1}{start_y + 1}{direction}"
+
+def check_winL(state, player):
+    """Checks for a win on the 7x6 grid."""
+    # Horizontal
+    for y in range(7):
+        for x in range(4): # 6 cols - 2 = 4
+            if state[y][x] == player and state[y][x+1] == player and state[y][x+2] == player:
+                return True
+    # Vertical
+    for y in range(5): # 7 rows - 2 = 5
+        for x in range(6):
+            if state[y][x] == player and state[y+1][x] == player and state[y+2][x] == player:
+                return True
+    # Diagonal (down-right)
+    for y in range(5):
+        for x in range(4):
+            if state[y][x] == player and state[y+1][x+1] == player and state[y+2][x+2] == player:
+                return True
+    # Diagonal (down-left)
+    for y in range(5):
+        for x in range(2, 6):
+            if state[y][x] == player and state[y+1][x-1] == player and state[y+2][x-2] == player:
+                return True
+    return False
+
+def game_statusL(state):
+    """Calls the large-grid win check."""
+    if check_winL(state, 0):
+        return 0
+    if check_winL(state, 1):
+        return 1
+    return None
+
+def calculate_initial_hashL(board, zobrist_table):
+    """Calculates Zobrist hash for the 7x6 board."""
+    h = 0
+    for y in range(7):
+        for x in range(6):
+            piece = board[y][x]
+            if piece is not None:
+                h ^= zobrist_table[piece][y][x]
+    return h
+
+def calculate_new_hashL(state, move, curr_hash, zobrist_table):
+    """Calculates an updated Zobrist hash (logic is board-size independent)."""
+    start_pos, end_pos = move
+    start_x, start_y = start_pos
+    end_x, end_y = end_pos
+    player_token = state[start_y][start_x]
+    new_hash = curr_hash
+    new_hash ^= zobrist_table[player_token][start_y][start_x]
+    new_hash ^= zobrist_table[player_token][end_y][end_x]
+    return new_hash
+
+def count_runsoftwoL(state, player):
+    """Naively counts runs of two on the 7x6 grid."""
+    score = 0
+    # Horizontal
+    for y in range(7):
+        for x in range(5): # 6 cols - 1 = 5
+            if state[y][x] == player and state[y][x+1] == player:
+                score += 1
+    # Vertical
+    for y in range(6): # 7 rows - 1 = 6
+        for x in range(6):
+            if state[y][x] == player and state[y+1][x] == player:
+                score += 1
+    # Diagonal (down-right)
+    for y in range(6):
+        for x in range(5):
+            if state[y][x] == player and state[y+1][x+1] == player:
+                score += 1
+    # Diagonal (down-left)
+    for y in range(6):
+        for x in range(1, 6):
+            if state[y][x] == player and state[y+1][x-1] == player:
+                score += 1
+    return score
+
+def pos_scoreL(state, player):
+    """Positional value map for the 7x6 grid."""
+    value_map = [
+        [1, 2, 3, 3, 2, 1],
+        [2, 3, 4, 4, 3, 2],
+        [2, 4, 5, 5, 4, 2],
+        [3, 5, 6, 6, 5, 3],
+        [2, 4, 5, 5, 4, 2],
+        [2, 3, 4, 4, 3, 2],
+        [1, 2, 3, 3, 2, 1],
+    ]
+    score = 0
+    for y in range(7):
+        for x in range(6):
+            if state[y][x] == player:
+                score += value_map[y][x]
+    return score
+
+def count_forcing_threatsL(state, player):
+    """Counts winning patterns and forcing threats on the 7x6 grid."""
+    winning_patterns = 0
+    forcing_threats = 0
+    dirs = [(0, 1), (0, -1), (1, 0), (-1, 0)]
+
+    def forcing_threat(winning_coords, piece1_coords, piece2_coords):
+        wy, wx = winning_coords
+        for dy, dx in dirs:
+            ny, nx = wy + dy, wx + dx
+            if in_boardL(nx, ny) and state[ny][nx] == player:
+                if (ny, nx) != piece1_coords and (ny, nx) != piece2_coords:
+                    return True
+        return False
+
+    # Horizontal
+    for y in range(7):
+        for x in range(4): # 6 cols - 2 = 4
+            line = [state[y][x], state[y][x+1], state[y][x+2]]
+            if line.count(player) == 2 and line.count(None) == 1:
+                empty_idx = line.index(None)
+                p1_idx = line.index(player)
+                p2_idx = line.index(player, p1_idx + 1)
+                if forcing_threat((y, x + empty_idx), (y, x + p1_idx), (y, x + p2_idx)):
+                    forcing_threats += 1
+                else:
+                    winning_patterns += 1
+    # Vertical
+    for y in range(5): # 7 rows - 2 = 5
+        for x in range(6):
+            line = [state[y][x], state[y+1][x], state[y+2][x]]
+            if line.count(player) == 2 and line.count(None) == 1:
+                empty_idx = line.index(None)
+                p1_idx = line.index(player)
+                p2_idx = line.index(player, p1_idx + 1)
+                if forcing_threat((y + empty_idx, x), (y + p1_idx, x), (y + p2_idx, x)):
+                    forcing_threats += 1
+                else:
+                    winning_patterns += 1
+    # Diagonal (down-right)
+    for y in range(5):
+        for x in range(4):
+            line = [state[y][x], state[y+1][x+1], state[y+2][x+2]]
+            if line.count(player) == 2 and line.count(None) == 1:
+                empty_idx = line.index(None)
+                p1_idx = line.index(player)
+                p2_idx = line.index(player, p1_idx + 1)
+                if forcing_threat((y + empty_idx, x + empty_idx), (y + p1_idx, x + p1_idx), (y + p2_idx, x + p2_idx)):
+                    forcing_threats += 1
+                else:
+                    winning_patterns += 1
+    # Diagonal (down-left)
+    for y in range(5):
+        for x in range(2, 6):
+            line = [state[y][x], state[y+1][x-1], state[y+2][x-2]]
+            if line.count(player) == 2 and line.count(None) == 1:
+                empty_idx = line.index(None)
+                p1_idx = line.index(player)
+                p2_idx = line.index(player, p1_idx + 1)
+                if forcing_threat((y + empty_idx, x - empty_idx), (y + p1_idx, x - p1_idx), (y + p2_idx, x - p2_idx)):
+                    forcing_threats += 1
+                else:
+                    winning_patterns += 1
+    return winning_patterns, forcing_threats
+
+def order_movesL(state, moves, is_max, player):
+    """Sorts moves for the 7x6 grid."""
+    move_scores = []
+    for move in moves:
+        temp_state = make_moveL(state, move, is_max)
+        score = count_runsoftwoL(temp_state, player) - count_runsoftwoL(temp_state, 1 - player)
+        move_scores.append(score)
+    sorted_moves = [move for _, move in sorted(zip(move_scores, moves), key=lambda pair: pair[0], reverse=is_max)]
+    return sorted_moves
