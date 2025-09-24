@@ -6,7 +6,29 @@ from games import Connect3M, Connect3L, Connect3MServer
 
 def play_local_game(args):
     """Handles the setup and execution of a local, interactive game."""
-    # ... (This function remains unchanged) ...
+    while True:
+        try:
+            if args.grid == 'large':
+                model = str(input("Choose your model ('mmv2', 'abpv2'): "))
+            else:
+                model = str(input("Choose your model ('mm', 'mmv2', 'abp', 'abpv2'): "))
+            
+            choice = int(input("Choose your player: 0 (White, moves first) or 1 (Black, moves second): "))
+            if choice in [0, 1]:
+                human_player = choice
+                break
+            else:
+                print("Invalid choice. Please enter 0 or 1.")
+        except ValueError:
+            print("Invalid input. Please enter a number.")
+    
+    # Instantiate the correct local game class based on the grid size
+    if args.grid == 'large':
+        game = Connect3L(model=model, human_player=human_player)
+    else:
+        game = Connect3M(model=model, human_player=human_player)
+        
+    game.play()
 
 def play_server_game(args):
     """Handles connecting to a server and running a network game."""
@@ -69,3 +91,5 @@ if __name__ == '__main__':
         play_local_game(args)
     elif args.mode == 'server':
         play_server_game(args)
+
+# python main.py --mode server --server_type prof --host_number 5

@@ -109,32 +109,42 @@ class Connect3M:
         print("\nThanks for playing!")
 
 
-# Add this new class to your games.py file GEMINI GENERATED
+# In games.py --  GEMINI GENERATED
 
 class Connect3MServer(Connect3M):
     """
     Manages a game instance that communicates moves through a server.
+    This version is robustly designed to ignore non-move echo messages.
     """
     def __init__(self, model, my_player_id, sock):
-        # We pass human_player=my_player_id so the parent class knows our ID
         super().__init__(model, human_player=my_player_id)
         self.sock = sock
-        # Override the agent's player ID to be certain
         self.agent.player = my_player_id
+        # Keep track of the last move we sent to ignore its echo
+        self.last_move_sent = None
         print(f"Initialized server game. This client is Player {my_player_id}.")
 
     def _apply_local_move(self, move_str, player_id):
-        """A simple helper to apply a move string to the local board."""
+        """
+        Applies a move string to the local board.
+        Returns True on success, False on failure (invalid format).
+        """
         try:
+            # A valid move must be a 3-character string
+            if not isinstance(move_str, str) or len(move_str) != 3:
+                return False
             start_x, start_y = int(move_str[0]) - 1, int(move_str[1]) - 1
             direction = move_str[2].upper()
             dx, dy = self.agent.dirs[direction]
             end_x, end_y = start_x + dx, start_y + dy
             
+            # Additional validation can be added here if needed
             self.board[end_y][end_x] = player_id
             self.board[start_y][start_x] = None
-        except (ValueError, KeyError, IndexError):
-            print(f"Received an invalid move string to apply locally: {move_str}")
+            return True
+        except (ValueError, KeyError, IndexError, TypeError):
+            # This will catch errors from non-move strings like "game01 black"
+            return False
 
     def play(self):
         """
@@ -144,31 +154,44 @@ class Connect3MServer(Connect3M):
         
         # If we are Player 0, we make the first move.
         if self.agent.player == 0:
-            print("We are Player 0. Making the first move.")
+            print("We are Player 0. Calculating the first move.")
             move_to_send = self.agent.find_best_move(depth=4)
             self._apply_local_move(move_to_send, self.agent.player)
+            self.last_move_sent = move_to_send
             utils.send_move(self.sock, move_to_send)
         
         while not self.game_over:
             self.display_board()
             
-            # 1. Wait for a message from the server (which will be the opponent's move)
+            # 1. Loop until we receive a valid move from our opponent.
             print("Waiting for opponent's move...")
-            opponent_move = utils.receive_move(self.sock)
+            while True:
+                message = utils.receive_move(self.sock)
 
-            # Check for game over conditions from the server
-            if not opponent_move or "wins" in opponent_move or "draw" in opponent_move:
-                self.game_over = True
-                print(f"Game Over. Final message: {opponent_move}")
-                continue
+                if not message or "wins" in message.lower() or "draw" in message.lower():
+                    self.game_over = True
+                    print(f"Game Over. Final message: {message}")
+                    break
+                
+                # Ignore the echo of our own last move
+                if message == self.last_move_sent:
+                    print(f"Ignoring echo of our own move: {message}")
+                    continue
+
+                # Try to apply the message as a move. If it works, it was the opponent's move.
+                if self._apply_local_move(message, self.ai_player):
+                    print(f"Successfully applied opponent's move: {message}")
+                    self.agent.update_board_opp(message)
+                    break # Break the inner loop and proceed to our turn
+                else:
+                    print(f"Ignoring non-move message from server: '{message}'")
             
-            # 2. Apply the opponent's move to our local boards
-            self._apply_local_move(opponent_move, self.ai_player) # Update game board
-            self.agent.update_board_opp(opponent_move) # Update agent's internal board
+            if self.game_over:
+                continue
 
             self.display_board()
 
-            # 3. Now it's our turn. Calculate and send our move.
+            # 2. Now it's our turn. Calculate and send our move.
             print("Opponent has moved. Calculating our response...")
             move_to_send = self.agent.find_best_move(depth=4)
             if not move_to_send:
@@ -177,10 +200,10 @@ class Connect3MServer(Connect3M):
                 continue
             
             self._apply_local_move(move_to_send, self.agent.player)
+            self.last_move_sent = move_to_send # Remember the move we are sending
             utils.send_move(self.sock, move_to_send)
 
         print("\nNetwork game has ended.")
-
 
 # ----------------------------------------------------------------------
 # --- NEW: Large 7x6 Grid Game Class --- Gemini Generated
