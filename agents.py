@@ -1,3 +1,24 @@
+# MADE BY ME
+# Used online resources for implementing algorithms and the heuristic.
+"""
+References:
+For Minimax:
+https://www.geeksforgeeks.org/artificial-intelligence/mini-max-algorithm-in-artificial-intelligence/
+
+For ABP:
+https://www.geeksforgeeks.org/dsa/minimax-algorithm-in-game-theory-set-4-alpha-beta-pruning/
+
+For Zobrist Hashing
+https://www.geeksforgeeks.org/dsa/minimax-algorithm-in-game-theory-set-5-zobrist-hashing/
+
+For ideas regarding the Heuristic:
+https://tromp.github.io/c4/connect4_thesis.pdf
+https://web.mit.edu/sp.268/www/2010/connectFourSlides.pdf
+https://www.youtube.com/watch?v=IpTFe0H52JM
+
+
+"""
+
 import utils
 import random
 
