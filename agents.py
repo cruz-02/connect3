@@ -438,24 +438,6 @@ class MiniMaxAgentV2(MiniMaxAgent):
         """
         logic to find best action
         """
-
-        # opponent_player = 1 - self.player
-        # _patterns, opp_threats = utils.count_forcing_threats(self.board, opponent_player)
-        
-        # if opp_threats > 0:
-        #     winning_square = utils.find_winning_square(self.board, opponent_player)
-            
-        #     # --- THIS LINE IS UPDATED ---
-        #     # Call the new utility function, passing the board and player
-        #     blocking_move = utils.find_move_to_square(self.board, self.player, winning_square)
-            
-        #     if blocking_move:
-        #         print("!!! DEFENSIVE OVERRIDE: Blocking immediate threat !!!")
-        #         is_max = (self.player == 0)
-        #         self.board = utils.make_move(self.board, blocking_move, is_max)
-        #         return utils.format_move_to_string(blocking_move)
-                
-
         is_max = True if self.player == 0 else False
 
         score, best_move = self.minimax(self.board, depth, is_max,)
@@ -522,23 +504,6 @@ class AlphaBetaV2(AlphaBeta):
         """
         logic to find best action
         """
-
-        # opponent_player = 1 - self.player
-        # _patterns, opp_threats = utils.count_forcing_threats(self.board, opponent_player)
-        
-        # if opp_threats > 0:
-        #     winning_square = utils.find_winning_square(self.board, opponent_player)
-            
-        #     # --- THIS LINE IS UPDATED ---
-        #     # Call the new utility function, passing the board and player
-        #     blocking_move = utils.find_move_to_square(self.board, self.player, winning_square)
-            
-        #     if blocking_move:
-        #         print("!!! DEFENSIVE OVERRIDE: Blocking immediate threat !!!")
-        #         is_max = (self.player == 0)
-        #         self.board = utils.make_move(self.board, blocking_move, is_max)
-        #         return utils.format_move_to_string(blocking_move)
-            
 
         is_max = True if self.player == 0 else False
 
@@ -628,9 +593,9 @@ class AlphaBetav2D(AlphaBetaD):
         opp_patterns, opp_threats = utils.count_forcing_threats(state, opp_player)
 
         
-        if opp_patterns >1: # change to patterns?
+        if my_threats >1: # maybe change return to add
             return -9999
-        if my_patterns > 1:
+        if opp_threats > 1:
             return 9999
         
         threat_score = 10 * (my_threats - opp_threats * def_factor)
@@ -657,7 +622,7 @@ class AlphaBetav2D(AlphaBetaD):
             return self.heuristic(state, status), None
         
         moves = self.gen_actions(state, is_max)
-        moves = utils.order_moves(state, moves, is_max, self.player)
+        # moves = utils.order_moves(state, moves, is_max, self.player)
 
         if is_max:
             max_eval = float('-inf')
