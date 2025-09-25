@@ -395,11 +395,11 @@ class MiniMaxAgentV2(MiniMaxAgent):
     def heuristic(self, state, status):
         """
         calculates heuristic v2
-        winning setups = 9999
+        winning setups + 100
         forcing setups * 10
         winning patterns * 4
         runs of two * 1
-        pos/grouping score * 1
+        pos/grouping score * 2
         """
         if status == self.player:
             return float('inf')
@@ -412,27 +412,27 @@ class MiniMaxAgentV2(MiniMaxAgent):
         my_patterns, my_threats = utils.count_forcing_threats(state, curr_player)
         opp_patterns, opp_threats = utils.count_forcing_threats(state, opp_player)
 
-        
-        if opp_threats >=2:
-            return -9999
-        if my_threats >=2:
-            return 9999
+        my_double = 100 if my_threats > 1 else 0
+        opp_double = 100 if opp_threats > 1 else 0
+
+
+        double_score = my_double - opp_double * def_factor
         
         threat_score = 10 * (my_threats - opp_threats * def_factor)
-        pattern_score = 2 * (my_patterns - opp_patterns * def_factor)
+        pattern_score = 4 * (my_patterns - opp_patterns * def_factor)
 
         my_runsoftwo = utils.count_runsoftwo(state, curr_player)
         opp_runsoftwo = utils.count_runsoftwo(state, opp_player)
 
-        runsoftwo_score = my_runsoftwo - opp_runsoftwo * def_factor
+        runsoftwo_score = 1 * (my_runsoftwo - opp_runsoftwo * def_factor)
 
         my_pos = utils.pos_score(state, curr_player)
         opp_pos = utils.pos_score(state, opp_player)
 
-        pos_score = my_pos - opp_pos * def_factor
+        pos_score = 2 *  (my_pos - opp_pos * def_factor)
 
         
-        return threat_score + pattern_score + runsoftwo_score + pos_score
+        return double_score + threat_score + pattern_score + runsoftwo_score + pos_score
     
     def find_best_move(self, depth):
         """
@@ -461,11 +461,11 @@ class AlphaBetaV2(AlphaBeta):
     def heuristic(self, state, status):
         """
         calculates heuristic v2
-        winning setups = 9999
+        winning setups + 100
         forcing setups * 10
         winning patterns * 4
         runs of two * 1
-        pos/grouping score * 1
+        pos/grouping score * 2
         """
         if status == self.player:
             return float('inf')
@@ -478,27 +478,27 @@ class AlphaBetaV2(AlphaBeta):
         my_patterns, my_threats = utils.count_forcing_threats(state, curr_player)
         opp_patterns, opp_threats = utils.count_forcing_threats(state, opp_player)
 
-        
-        if opp_threats >=2:
-            return -9999
-        if my_threats >=2:
-            return 9999
+        my_double = 100 if my_threats > 1 else 0
+        opp_double = 100 if opp_threats > 1 else 0
+
+
+        double_score = my_double - opp_double * def_factor
         
         threat_score = 10 * (my_threats - opp_threats * def_factor)
-        pattern_score = 2 * (my_patterns - opp_patterns * def_factor)
+        pattern_score = 4 * (my_patterns - opp_patterns * def_factor)
 
         my_runsoftwo = utils.count_runsoftwo(state, curr_player)
         opp_runsoftwo = utils.count_runsoftwo(state, opp_player)
 
-        runsoftwo_score = my_runsoftwo - opp_runsoftwo * def_factor
+        runsoftwo_score = 1 * (my_runsoftwo - opp_runsoftwo * def_factor)
 
         my_pos = utils.pos_score(state, curr_player)
         opp_pos = utils.pos_score(state, opp_player)
 
-        pos_score = my_pos - opp_pos * def_factor
+        pos_score = 2 *  (my_pos - opp_pos * def_factor)
 
         
-        return threat_score + pattern_score + runsoftwo_score + pos_score
+        return double_score + threat_score + pattern_score + runsoftwo_score + pos_score
     
     def find_best_move(self, depth):
         """
@@ -528,11 +528,11 @@ class MiniMaxv2D(MiniMaxAgentD):
     def heuristic(self, state, status):
         """
         calculates heuristic v2
-        winning setups = 9999
+        winning setups + 100
         forcing setups * 10
         winning patterns * 4
         runs of two * 1
-        pos/grouping score * 1
+        pos/grouping score * 2
         """
         if status == self.player:
             return float('inf')
@@ -545,27 +545,27 @@ class MiniMaxv2D(MiniMaxAgentD):
         my_patterns, my_threats = utils.count_forcing_threats(state, curr_player)
         opp_patterns, opp_threats = utils.count_forcing_threats(state, opp_player)
 
-        
-        if opp_threats >=1:
-            return -9999
-        if my_threats >=2:
-            return 9999
+        my_double = 100 if my_threats > 1 else 0
+        opp_double = 100 if opp_threats > 1 else 0
+
+
+        double_score = my_double - opp_double * def_factor
         
         threat_score = 10 * (my_threats - opp_threats * def_factor)
-        pattern_score = 2 * (my_patterns - opp_patterns * def_factor)
+        pattern_score = 4 * (my_patterns - opp_patterns * def_factor)
 
         my_runsoftwo = utils.count_runsoftwo(state, curr_player)
         opp_runsoftwo = utils.count_runsoftwo(state, opp_player)
 
-        runsoftwo_score = my_runsoftwo - opp_runsoftwo * def_factor
+        runsoftwo_score = 1 * (my_runsoftwo - opp_runsoftwo * def_factor)
 
         my_pos = utils.pos_score(state, curr_player)
         opp_pos = utils.pos_score(state, opp_player)
 
-        pos_score = 10 *  (my_pos - opp_pos * def_factor)
+        pos_score = 2 *  (my_pos - opp_pos * def_factor)
 
         
-        return threat_score + pattern_score + runsoftwo_score + pos_score
+        return double_score + threat_score + pattern_score + runsoftwo_score + pos_score
 
 
 class AlphaBetav2D(AlphaBetaD):
@@ -575,11 +575,11 @@ class AlphaBetav2D(AlphaBetaD):
     def heuristic(self, state, status):
         """
         calculates heuristic v2
-        winning setups = 9999
+        winning setups + 100
         forcing setups * 10
         winning patterns * 4
         runs of two * 1
-        pos/grouping score * 1
+        pos/grouping score * 2
         """
         if status == self.player:
             return float('inf')
@@ -592,27 +592,27 @@ class AlphaBetav2D(AlphaBetaD):
         my_patterns, my_threats = utils.count_forcing_threats(state, curr_player)
         opp_patterns, opp_threats = utils.count_forcing_threats(state, opp_player)
 
-        
-        if my_threats >1: # maybe change return to add
-            return -9999
-        if opp_threats > 1:
-            return 9999
+        my_double = 100 if my_threats > 1 else 0
+        opp_double = 100 if opp_threats > 1 else 0
+
+
+        double_score = my_double - opp_double * def_factor
         
         threat_score = 10 * (my_threats - opp_threats * def_factor)
-        pattern_score = 3 * (my_patterns - opp_patterns * def_factor)
+        pattern_score = 4 * (my_patterns - opp_patterns * def_factor)
 
         my_runsoftwo = utils.count_runsoftwo(state, curr_player)
         opp_runsoftwo = utils.count_runsoftwo(state, opp_player)
 
-        runsoftwo_score = 4 * (my_runsoftwo - opp_runsoftwo * def_factor)
+        runsoftwo_score = 1 * (my_runsoftwo - opp_runsoftwo * def_factor)
 
         my_pos = utils.pos_score(state, curr_player)
         opp_pos = utils.pos_score(state, opp_player)
 
-        pos_score = 5 *  (my_pos - opp_pos * def_factor)
+        pos_score = 2 *  (my_pos - opp_pos * def_factor)
 
         
-        return threat_score + pattern_score + runsoftwo_score + pos_score
+        return double_score + threat_score + pattern_score + runsoftwo_score + pos_score
     
     def minimax(self, state, depth, is_max, curr_hash, history, alpha, beta):
 
