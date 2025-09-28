@@ -62,7 +62,7 @@ class Connect3M:
             
             if self.current_player == self.ai_player:
                 print(f"\nPlayer {player_name} (AI) is thinking...")
-                move_str = self.agent.find_best_move(depth=15)
+                move_str = self.agent.find_best_move(depth=4)
                 print(f"AI chose move: {move_str}")
             else:
                 move_str = input(f"Player {player_name} (You), enter your move (e.g., '14E'): ")
