@@ -394,7 +394,9 @@ class AlphaBetaD(MiniMaxAgentD):
 
         if best_move is None:
             print("Agent sees terminal state or no moves")
-            return None
+            best_move = self.gen_actions(self.board, is_max)
+            best_move = random.choice(best_move)
+            # return None
 
         # Update Board
         self.board = utils.make_move(self.board, best_move, is_max)
