@@ -62,7 +62,7 @@ class Connect3M:
             
             if self.current_player == self.ai_player:
                 print(f"\nPlayer {player_name} (AI) is thinking...")
-                move_str = self.agent.find_best_move(depth=4)
+                move_str = self.agent.find_best_move(depth=6)
                 print(f"AI chose move: {move_str}")
             else:
                 move_str = input(f"Player {player_name} (You), enter your move (e.g., '14E'): ")
@@ -163,7 +163,7 @@ class Connect3MServer(Connect3M):
         
         if self.agent.player == 0:
             print("We are Player 0. Calculating the first move.")
-            move_to_send = self.agent.find_best_move(depth=4)
+            move_to_send = self.agent.find_best_move(depth=6)
             if move_to_send:
                 self._apply_local_move(move_to_send, self.agent.player)
                 self.last_move_sent = move_to_send
@@ -205,7 +205,7 @@ class Connect3MServer(Connect3M):
             self.display_board()
 
             print("Opponent has moved. Calculating our response...")
-            move_to_send = self.agent.find_best_move(depth=4)
+            move_to_send = self.agent.find_best_move(depth=6)
             if not move_to_send:
                 self.game_over = True
                 continue
@@ -264,7 +264,7 @@ class Connect3L:
             
             if self.current_player == self.ai_player:
                 print(f"\nPlayer {player_name} (AI) is thinking...")
-                move_str = self.agent.find_best_move(depth=4) # Using a lower depth for performance on larger board
+                move_str = self.agent.find_best_move(depth=6) # Using a lower depth for performance on larger board
                 print(f"AI chose move: {move_str}")
             else:
                 move_str = input(f"Player {player_name} (You), enter your move (e.g., '22E'): ")
@@ -357,7 +357,7 @@ class Connect3LServer(Connect3L):
         # If we are Player 0 (White), we make the first move.
         if self.agent.player == 0:
             print("We are Player 0. Calculating the first move.")
-            move_to_send = self.agent.find_best_move(depth=4)
+            move_to_send = self.agent.find_best_move(depth=6)
             if move_to_send:
                 # We apply our own move differently since agent already updated its internal board
                 # This line is removed: self._apply_local_move(move_to_send, self.agent.player)
@@ -402,7 +402,7 @@ class Connect3LServer(Connect3L):
             self.display_board()
 
             print("Opponent has moved. Calculating our response...")
-            move_to_send = self.agent.find_best_move(depth=4)
+            move_to_send = self.agent.find_best_move(depth=6)
             if not move_to_send:
                 self.game_over = True
                 print("AI has no moves and forfeits.")
